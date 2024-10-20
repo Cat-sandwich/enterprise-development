@@ -1,4 +1,4 @@
-﻿using EnterpriseStatistics.Domain;
+﻿using EnterpriseStatistics.Domain.Models;
 
 namespace EnterpriseStatistics.Tests;
 

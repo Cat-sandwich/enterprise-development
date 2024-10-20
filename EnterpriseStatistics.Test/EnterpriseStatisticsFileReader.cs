@@ -1,4 +1,4 @@
-﻿using EnterpriseStatistics.Domain;
+﻿using EnterpriseStatistics.Domain.Models;
 using System.Globalization;
 
 namespace EnterpriseStatistics.Tests;

@@ -1,4 +1,4 @@
-﻿namespace EnterpriseStatistics.Domain;
+﻿namespace EnterpriseStatistics.Domain.Models;
 /// <summary>
 /// Тип отрасли
 /// </summary>
@@ -20,5 +20,5 @@ public enum OwnershipForms
     MunicipalCity,
     LimitedLiabilityPartnership,
     Private,
-    JointStock 
+    JointStock
 }

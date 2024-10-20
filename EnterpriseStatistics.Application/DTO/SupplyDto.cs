@@ -1,21 +1,18 @@
-﻿namespace EnterpriseStatistics.Domain;
+﻿namespace EnterpriseStatistics.Application.DTO;
+
 /// <summary>
 /// Поставка
 /// </summary>
-public class Supply
+internal class SupplyDto
 {
     /// <summary>
-    /// Идентификатор поставки
+    /// id поставщика
     /// </summary>
-    public required int Id { get; set; }
+    public required int IdSupplier { get; set; }
     /// <summary>
-    /// Поставщик
+    /// ОГРН предприятия
     /// </summary>
-    public required Supplier Supplier { get; set; }
-    /// <summary>
-    /// Предприятие
-    /// </summary>
-    public required Enterprise Enterprise { get; set; }
+    public required ulong MainStateRegistrationNumber { get; set; }
     /// <summary>
     /// Количество единиц сырья
     /// </summary>

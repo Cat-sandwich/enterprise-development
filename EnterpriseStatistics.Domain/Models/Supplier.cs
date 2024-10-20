@@ -1,4 +1,4 @@
-﻿namespace EnterpriseStatistics.Domain;
+﻿namespace EnterpriseStatistics.Domain.Models;
 /// <summary>
 /// Поставщик
 /// </summary>

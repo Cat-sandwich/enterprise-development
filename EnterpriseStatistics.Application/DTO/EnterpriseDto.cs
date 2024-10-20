@@ -1,10 +1,11 @@
-﻿namespace EnterpriseStatistics.Domain;
+﻿namespace EnterpriseStatistics.Application.DTO;
 
 /// <summary>
 /// Предприятие
 /// </summary>
-public class Enterprise
-{    
+public class EnterpriseDto
+{
+
     /// <summary>
     /// Идентификатор предприятия - ОГРН
     /// </summary>
@@ -32,11 +33,9 @@ public class Enterprise
     /// <summary>
     /// Тип отрасли
     /// </summary>
-    public required IndustryTypes IndustryType { get; set; }
+    public required string IndustryType { get; set; }
     /// <summary>
     /// Форма собственности
     /// </summary>
-    public required OwnershipForms OwnershipForm { get; set; }  
-
+    public required string OwnershipForm { get; set; }
 }
-

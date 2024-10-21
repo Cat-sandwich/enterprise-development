@@ -3,7 +3,7 @@
 /// <summary>
 /// Поставщик
 /// </summary>
-internal class SupplierDto
+public class SupplierDto
 {
     /// <summary>
     /// ФИО

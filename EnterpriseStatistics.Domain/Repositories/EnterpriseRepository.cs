@@ -5,7 +5,7 @@ namespace EnterpriseStatistics.Domain.Repositories;
 
 public class EnterpriseRepository: IRepository<Enterprise, ulong>
 {
-    private static readonly List<Enterprise> _enterprises = new List<Enterprise>(); // изменить на чтение
+    private static readonly List<Enterprise> _enterprises = [];
 
     public List<Enterprise> GetAll()
     {

@@ -5,7 +5,7 @@ namespace EnterpriseStatistics.Domain.Repositories;
 
 public class SupplyRepository: IRepository<Supply, int>
 {
-    private static readonly List<Supply> _supplies = new List<Supply>(); // изменить на чтение
+    private static readonly List<Supply> _supplies = [];
 
     public List<Supply> GetAll()
     {

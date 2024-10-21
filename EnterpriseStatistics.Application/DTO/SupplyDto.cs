@@ -3,7 +3,7 @@
 /// <summary>
 /// Поставка
 /// </summary>
-internal class SupplyDto
+public class SupplyDto
 {
     /// <summary>
     /// id поставщика

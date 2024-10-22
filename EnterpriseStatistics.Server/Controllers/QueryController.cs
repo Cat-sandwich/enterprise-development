@@ -1,5 +1,4 @@
 ﻿using EnterpriseStatistics.Application.DTO;
-using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,20 +6,20 @@ namespace EnterpriseStatistics.Server.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class QueryController(IRepository<Supply, int> repository) : ControllerBase
+public class QueryController() : ControllerBase
 {
     private readonly List<Supply> _supplyList = EnterpriseStatisticsFileReader.ReadSupply(Path.Combine("Data", "data.csv"));
     /// <summary>
     /// Все сведения о конкретном предприятии.
     /// </summary>
     /// <param name="mainStateRegistrationNumber">ОГРН конкретного предприятия</param>
-    /// <returns></returns>
+    /// <returns>Объект <see cref="Enterprise"/></returns>
     [HttpGet("1")]
     public ActionResult<IEnumerable<Enterprise>> InfoSpecificEnterprise(ulong mainStateRegistrationNumber)
     {
         var specificEnterprise = _supplyList
         .Select(e => e.Enterprise)
-        .Where(e => e.MainStateRegistrationNumber == mainStateRegistrationNumber).ToList();
+        .Where(e => e.MainStateRegistrationNumber == mainStateRegistrationNumber).Distinct();
 
         return Ok(specificEnterprise);
     }
@@ -30,7 +29,7 @@ public class QueryController(IRepository<Supply, int> repository) : ControllerBa
     /// </summary>
     /// <param name="startDate">Дата начала периода</param>
     /// <param name="endDate">Дата окончания периода</param>
-    /// <returns></returns>
+    /// <returns>Список <see cref="Supplier"/></returns>
     [HttpGet("2")]
     public ActionResult<IEnumerable<Supplier>> InfoSupplierDate(DateTime startDate, DateTime endDate)
     {
@@ -47,7 +46,7 @@ public class QueryController(IRepository<Supply, int> repository) : ControllerBa
     /// <summary>
     /// Количество предприятий, с которыми работает каждый поставщик.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Список <see cref="EnterpriseCountsDto"/></returns>
     [HttpGet("3")]
     public ActionResult<IEnumerable<EnterpriseCountsDto>> CountEnterprise()
     {
@@ -66,7 +65,7 @@ public class QueryController(IRepository<Supply, int> repository) : ControllerBa
     /// <summary>
     /// Информация о количестве поставщиков для каждого типа отрасли и форме собственности.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Список <see cref="SupplierCountIndustryOwnershipDto"/></returns>
     [HttpGet("4")]
     public ActionResult<IEnumerable<SupplierCountIndustryOwnershipDto>> SupplierCountIndustryOwnership()
     {
@@ -86,7 +85,7 @@ public class QueryController(IRepository<Supply, int> repository) : ControllerBa
     /// <summary>
     /// Топ 5 предприятий по количеству поставок.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Список <see cref="EnterprisesSupplyCountDto"/></returns>
     [HttpGet("5")]
     public ActionResult<IEnumerable<EnterprisesSupplyCountDto>> Top5EnterprisesSupplyCount()
     {
@@ -107,7 +106,7 @@ public class QueryController(IRepository<Supply, int> repository) : ControllerBa
     /// </summary>
     /// <param name="startDate">Дата начала периода</param>
     /// <param name="endDate">Дата окончания периода</param>
-    /// <returns></returns>
+    /// <returns>Список <see cref="SuppliersWithMaxSupplyDto"/></returns>
     [HttpGet("6")]
     public ActionResult<IEnumerable<SuppliersWithMaxSupplyDto>> MaxSupplierPeriod(DateTime startDate, DateTime endDate)
     {

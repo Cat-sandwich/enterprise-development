@@ -56,8 +56,6 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
 
         if (enterprise == null)
             return false;
-
-        _enterprises.Remove(enterprise);
-        return true;
+        return _enterprises.Remove(enterprise);
     }
 }

@@ -59,8 +59,7 @@ public class SupplierRepository: IRepository<Supplier, int>
 
         if (supplier == null)
             return false;
-
-        _suppliers.Remove(supplier);
-        return true;
+        
+        return _suppliers.Remove(supplier);
     }
 }

@@ -7,6 +7,11 @@ namespace EnterpriseStatistics.Application;
 
 public class Mapper(IMapper mapper)
 {
+    /// <summary>
+    /// Преобразование из <see cref="SupplyDto"/> в объект класса <see cref="Supply"/>
+    /// </summary>
+    /// <param name="item">Объект для преобразования</param>
+    /// <returns>Объект класса <see cref="Supply"/></returns>
     public Supply GetSupply(SupplyDto item)
     {
         var supply = mapper.Map<Supply>(item);
@@ -35,6 +40,12 @@ public class Mapper(IMapper mapper)
 
         return supply;
     }
+
+    /// <summary>
+    /// Преобразование из <see cref="EnterpriseDto"/> в объект класса <see cref="Enterprise"/>
+    /// </summary>
+    /// <param name="item">Объект для преобразования</param>
+    /// <returns>Объект класса <see cref="Enterprise"/></returns>
     public Enterprise GetEnterprise(EnterpriseDto item)
     {
         var enterprise = mapper.Map<Enterprise>(item);
@@ -53,6 +64,11 @@ public class Mapper(IMapper mapper)
         return enterprise;
     }
 
+    /// <summary>
+    /// Преобразование из <see cref="Enterprise"/> в объект класса <see cref="EnterpriseDto"/>
+    /// </summary>
+    /// <param name="item">Объект для преобразования</param>
+    /// <returns>Объект класса <see cref="EnterpriseDto"/></returns>
     public EnterpriseDto GetEnterpriseDto(Enterprise item)
     {
         var enterpriseDto = mapper.Map<EnterpriseDto>(item);

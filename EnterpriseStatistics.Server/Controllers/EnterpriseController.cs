@@ -4,82 +4,91 @@ using EnterpriseStatistics.Domain.Models;
 using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Application.DTO;
 
-namespace EnterpriseStatistics.Server.Controllers
+namespace EnterpriseStatistics.Server.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMapper mapper) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMapper mapper) : ControllerBase
+    /// <summary>
+    /// Вернуть все предприятия
+    /// </summary>
+    /// <returns>Список объектов <see cref="EnterpriseDto"/></returns>
+    /// <response code="200">Запрос выполнен успешно</response>
+    /// <response code="404">Предприятия не найдены</response>
+    [HttpGet]
+    public ActionResult<IEnumerable<Enterprise>> Get()
     {
-        /// <summary>
-        /// Вернуть все предприятия
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public ActionResult<IEnumerable<Enterprise>> Get()
-        {
-            Application.Mapper servise = new(mapper);
-            repository.GetAll().ForEach(e => servise.GetEnterpriseDto(e));
-            return Ok(repository);
-        }
+        Application.Mapper servise = new(mapper);
+        var enterpriseDto = repository.GetAll()
+            .Select(e => servise.GetEnterpriseDto(e)).ToList();
 
-        /// <summary>
-        /// Вернуть предприятие по id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpGet("{id}")]
-        public ActionResult<Enterprise> Get(ulong id)
-        {
-            var enterprise = repository.GetById(id);
+        if(enterpriseDto == null) return NotFound();
+        return Ok(enterpriseDto);
+    }
 
-            if (enterprise == null)
-                return NotFound();
+    /// <summary>
+    /// Вернуть предприятие по ОГРН
+    /// </summary>
+    /// <param name="mainStateRegistrationNumber">ОГРН возвращаемого объекта</param>
+    /// <returns>Список объектов <see cref="Enterprise"/></returns>
+    /// <response code="200">Запрос выполнен успешно</response>
+    /// <response code="404">Предприятие не найдено</response>
+    [HttpGet("{mainStateRegistrationNumber}")]
+    public ActionResult<Enterprise> Get(ulong mainStateRegistrationNumber)
+    {
+        var enterprise = repository.GetById(mainStateRegistrationNumber);
 
-            return Ok(enterprise);
-        }
+        if (enterprise == null)
+            return NotFound();
 
-        /// <summary>
-        /// Добавить новое предприятие
-        /// </summary>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public IActionResult Post([FromBody] EnterpriseDto item)
-        {
-            Application.Mapper servise = new(mapper);
-            var enterprise = servise.GetEnterprise(item);
-            repository.Add(enterprise);
-            return Ok();
-        }
+        return Ok(enterprise);
+    }
 
-        /// <summary>
-        /// Изменить предприятие по id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        [HttpPut("{id}")]
-        public IActionResult Put(ulong id, [FromBody] EnterpriseDto item)
-        {
-            Application.Mapper servise = new(mapper);
-            var enterprise = servise.GetEnterprise(item);
-            enterprise.MainStateRegistrationNumber = id;
-            if (!repository.Update(enterprise, id))
-                return NotFound();
-            return Ok();
-        }
+    /// <summary>
+    /// Добавить новое предприятие
+    /// </summary>
+    /// <param name="item">Добавляемый объект</param>
+    /// <returns>Созданный объект <see cref="Enterprise"/></returns>
+    /// <response code="200">Запрос выполнен успешно</response>
+    [HttpPost]
+    public IActionResult Post([FromBody] EnterpriseDto item)
+    {
+        Application.Mapper servise = new(mapper);
+        var enterprise = servise.GetEnterprise(item);
+        repository.Add(enterprise);
+        return Ok(enterprise);
+    }
 
-        /// <summary>
-        /// Удалить предприятие по id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpDelete("{id}")]
-        public IActionResult Delete(ulong id)
-        {
-            if (!repository.Delete(id))
-                return NotFound();
-            return Ok();
-        }
+    /// <summary>
+    /// Изменить предприятие по ОГРН
+    /// </summary>
+    /// <param name="mainStateRegistrationNumber">ОГРН изменяемого объекта</param>
+    /// <param name="item">Изменяемый объект</param>
+    /// <returns>Измененный объект <see cref="Enterprise"/></returns>
+    /// <response code="200">Запрос выполнен успешно</response>
+    /// <response code="404">Предприятие не найдено</response>
+    [HttpPut("{mainStateRegistrationNumber}")]
+    public IActionResult Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
+    {
+        Application.Mapper servise = new(mapper);
+        var enterprise = servise.GetEnterprise(item);
+        enterprise.MainStateRegistrationNumber = mainStateRegistrationNumber;
+        if (!repository.Update(enterprise, mainStateRegistrationNumber))
+            return NotFound();
+        return Ok(enterprise);
+    }
+
+    /// <summary>
+    /// Удалить предприятие по ОГРН
+    /// </summary>
+    /// <param name="mainStateRegistrationNumber">ОГРН удаляемого объекта</param>
+    /// <response code="200">Запрос выполнен успешно</response>
+    /// <response code="404">Предприятие не найдено</response>
+    [HttpDelete("{mainStateRegistrationNumber}")]
+    public IActionResult Delete(ulong mainStateRegistrationNumber)
+    {
+        if (!repository.Delete(mainStateRegistrationNumber)) return NotFound();
+        return Ok();
     }
 }

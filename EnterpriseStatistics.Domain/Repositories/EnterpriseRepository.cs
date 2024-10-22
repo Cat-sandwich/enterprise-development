@@ -7,41 +7,49 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
 {
     private static readonly List<Enterprise> _enterprises = [];
 
-    public List<Enterprise> GetAll()
-    {
-        return _enterprises;
-    }
-    public Enterprise GetById(ulong id)
-    {
-        return _enterprises.Find(e => e.MainStateRegistrationNumber == id);
-    }
+    /// <summary>
+    /// Вернуть список предприятий
+    /// </summary>
+    /// <returns>Список объектов <see cref="Enterprise"/></returns>
+    public List<Enterprise> GetAll() => _enterprises;
 
-    
+    /// <summary>
+    /// Вернуть предприятие по id
+    /// </summary>
+    /// <param name="id">id возвращаемого объекта</param>
+    /// <returns>Объект <see cref="Enterprise"/> или null, если не найден</returns>
+    public Enterprise? GetById(ulong id) => _enterprises.FirstOrDefault(d => d.MainStateRegistrationNumber == id);
+
+    /// <summary>
+    /// Добавить предприятие
+    /// </summary>
+    /// <param name="newItem">добавляемый объект</param>
     public void Add(Enterprise newItem)
     {
-        newItem.MainStateRegistrationNumber = (ulong)_enterprises.Count;
         _enterprises.Add(newItem);
     }
 
-   
-    public bool Update(Enterprise newValue, ulong id)
+    /// <summary>
+    /// Обновить предприятие по id
+    /// </summary>
+    /// <param name="newItem">объект с новыми значениями</param>
+    /// <param name="id">id изменяемого объекта</param>
+    /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
+    public bool Update(Enterprise newItem, ulong id)
     {
         var item_id = _enterprises.FindIndex(e => e.MainStateRegistrationNumber == id);
         if (item_id == -1)
             return false;
 
-        _enterprises[item_id].MainStateRegistrationNumber = newValue.MainStateRegistrationNumber;
-        _enterprises[item_id].Name = newValue.Name;
-        _enterprises[item_id].IndustryType = newValue.IndustryType;
-        _enterprises[item_id].Address = newValue.Address;
-        _enterprises[item_id].Phone = newValue.Phone;
-        _enterprises[item_id].OwnershipForm = newValue.OwnershipForm;
-        _enterprises[item_id].EmployeeCount = newValue.EmployeeCount;
-        _enterprises[item_id].TotalArea = newValue.TotalArea;
+        _enterprises[item_id] = newItem;
         return true;
     }
 
-    
+    /// <summary>
+    /// Удалить предприятие по id
+    /// </summary>
+    /// <param name="id">id удаляемого объекта</param>
+    /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
     public bool Delete(ulong id)
     {
         var enterprise = GetById(id);
@@ -52,7 +60,4 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
         _enterprises.Remove(enterprise);
         return true;
     }
-
-
-
 }

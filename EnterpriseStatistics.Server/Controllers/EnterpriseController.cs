@@ -47,22 +47,6 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     public ActionResult<Enterprise> Post([FromBody] EnterpriseDto item)
     {
         var enterprise = mapper.Map<Enterprise>(item);
-        if (Enum.TryParse<IndustryTypes>(item.IndustryType, out var industryType))
-        {
-            enterprise.IndustryType = industryType;
-        }
-        else
-        {
-            NotFound("IndustryType not found");
-        }
-        if (Enum.TryParse<OwnershipForms>(item.OwnershipForm, out var ownershipForm))
-        {
-            enterprise.OwnershipForm = ownershipForm;
-        }
-        else
-        {
-            NotFound("OwnershipForm not found");
-        }
         repository.Add(enterprise);
         return Ok(enterprise);
     }
@@ -79,22 +63,6 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     public ActionResult<Enterprise> Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
     {
         var enterprise = mapper.Map<Enterprise>(item);
-        if (Enum.TryParse<IndustryTypes>(item.IndustryType, out var industryType))
-        {
-            enterprise.IndustryType = industryType;
-        }
-        else
-        {
-            NotFound("IndustryType not found");
-        }
-        if (Enum.TryParse<OwnershipForms>(item.OwnershipForm, out var ownershipForm))
-        {
-            enterprise.OwnershipForm = ownershipForm;
-        }
-        else
-        {
-            NotFound("OwnershipForm not found");
-        }
         if (!repository.Update(enterprise, mainStateRegistrationNumber))
             return NotFound();
         return Ok(enterprise);

@@ -3,6 +3,7 @@ using AutoMapper;
 using EnterpriseStatistics.Domain.Models;
 using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Application.DTO;
+using System.Numerics;
 
 namespace EnterpriseStatistics.Server.Controllers;
 
@@ -15,17 +16,8 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// </summary>
     /// <returns>Список объектов <see cref="EnterpriseDto"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
-    /// <response code="404">Предприятия не найдены</response>
     [HttpGet]
-    public ActionResult<IEnumerable<Enterprise>> Get()
-    {
-        Application.Mapper servise = new(mapper);
-        var enterpriseDto = repository.GetAll()
-            .Select(e => servise.GetEnterpriseDto(e)).ToList();
-
-        if(enterpriseDto == null) return NotFound();
-        return Ok(enterpriseDto);
-    }
+    public ActionResult<IEnumerable<Enterprise>> Get() => Ok(repository.GetAll());
 
     /// <summary>
     /// Вернуть предприятие по ОГРН
@@ -52,10 +44,25 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <returns>Созданный объект <see cref="Enterprise"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpPost]
-    public IActionResult Post([FromBody] EnterpriseDto item)
+    public ActionResult<Enterprise> Post([FromBody] EnterpriseDto item)
     {
-        Application.Mapper servise = new(mapper);
-        var enterprise = servise.GetEnterprise(item);
+        var enterprise = mapper.Map<Enterprise>(item);
+        if (Enum.TryParse<IndustryTypes>(item.IndustryType, out var industryType))
+        {
+            enterprise.IndustryType = industryType;
+        }
+        else
+        {
+            NotFound("IndustryType not found");
+        }
+        if (Enum.TryParse<OwnershipForms>(item.OwnershipForm, out var ownershipForm))
+        {
+            enterprise.OwnershipForm = ownershipForm;
+        }
+        else
+        {
+            NotFound("OwnershipForm not found");
+        }
         repository.Add(enterprise);
         return Ok(enterprise);
     }
@@ -69,11 +76,25 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Предприятие не найдено</response>
     [HttpPut("{mainStateRegistrationNumber}")]
-    public IActionResult Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
+    public ActionResult<Enterprise> Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
     {
-        Application.Mapper servise = new(mapper);
-        var enterprise = servise.GetEnterprise(item);
-        enterprise.MainStateRegistrationNumber = mainStateRegistrationNumber;
+        var enterprise = mapper.Map<Enterprise>(item);
+        if (Enum.TryParse<IndustryTypes>(item.IndustryType, out var industryType))
+        {
+            enterprise.IndustryType = industryType;
+        }
+        else
+        {
+            NotFound("IndustryType not found");
+        }
+        if (Enum.TryParse<OwnershipForms>(item.OwnershipForm, out var ownershipForm))
+        {
+            enterprise.OwnershipForm = ownershipForm;
+        }
+        else
+        {
+            NotFound("OwnershipForm not found");
+        }
         if (!repository.Update(enterprise, mainStateRegistrationNumber))
             return NotFound();
         return Ok(enterprise);

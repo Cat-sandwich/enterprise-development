@@ -26,7 +26,8 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
     /// <param name="newItem">добавляемый объект</param>
     public void Add(Enterprise newItem)
     {
-        _enterprises.Add(newItem);
+        if(GetById(newItem.MainStateRegistrationNumber) == null)
+            _enterprises.Add(newItem);
     }
 
     /// <summary>
@@ -37,11 +38,19 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
     public bool Update(Enterprise newItem, ulong id)
     {
-        var item_id = _enterprises.FindIndex(e => e.MainStateRegistrationNumber == id);
-        if (item_id == -1)
-            return false;
+        var enterprise = GetById(id);
 
-        _enterprises[item_id] = newItem;
+        if (enterprise == null) return false;
+
+        enterprise.MainStateRegistrationNumber = newItem.MainStateRegistrationNumber;
+        enterprise.Name = newItem.Name;
+        enterprise.Address = newItem.Address;
+        enterprise.Phone = newItem.Phone;
+        enterprise.EmployeeCount = newItem.EmployeeCount;
+        enterprise.TotalArea = newItem.TotalArea;
+        enterprise.IndustryType = newItem.IndustryType;
+        enterprise.OwnershipForm = newItem.OwnershipForm;
+
         return true;
     }
 

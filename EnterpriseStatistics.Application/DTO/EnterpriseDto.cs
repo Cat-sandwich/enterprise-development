@@ -1,4 +1,7 @@
-﻿namespace EnterpriseStatistics.Application.DTO;
+﻿using EnterpriseStatistics.Domain.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace EnterpriseStatistics.Application.DTO;
 
 /// <summary>
 /// Предприятие
@@ -33,9 +36,11 @@ public class EnterpriseDto
     /// <summary>
     /// Тип отрасли
     /// </summary>
+    [EnumDataType(typeof(IndustryTypes))]
     public required string IndustryType { get; set; }
     /// <summary>
     /// Форма собственности
     /// </summary>
+    [EnumDataType(typeof(OwnershipForms))]
     public required string OwnershipForm { get; set; }
 }

@@ -6,6 +6,7 @@ namespace EnterpriseStatistics.Domain.Repositories;
 public class SupplierRepository: IRepository<Supplier, int>
 {
     private static readonly List<Supplier> _suppliers = [];
+    private int _supplierId = 0;
 
     /// <summary>
     /// Вернуть всех поставщиков
@@ -28,7 +29,7 @@ public class SupplierRepository: IRepository<Supplier, int>
     /// <param name="newItem">добавляемый объект</param>
     public void Add(Supplier newItem)
     {
-        newItem.Id = _suppliers.Count;
+        newItem.Id = _supplierId++;
         _suppliers.Add(newItem);
     }
 
@@ -40,11 +41,15 @@ public class SupplierRepository: IRepository<Supplier, int>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
     public bool Update(Supplier newItem, int id)
     {
-        var item_id = _suppliers.FindIndex(s => s.Id == id);
-        if (item_id == -1)
-            return false;
+        var supplier = GetById(id);
 
-        _suppliers[item_id] = newItem;
+        if (supplier == null) return false;
+
+        supplier.Id = newItem.Id;
+        supplier.FullName = newItem.FullName;
+        supplier.Address = newItem.Address;
+        supplier.Phone = newItem.Phone;
+
         return true;
     }
 

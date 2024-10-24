@@ -3,12 +3,14 @@ using AutoMapper;
 using EnterpriseStatistics.Domain.Models;
 using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Application.DTO;
+using EnterpriseStatistics.Domain.Repositories;
 
 namespace EnterpriseStatistics.Server.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SupplyController(IRepository<Supply, int> repository, IMapper mapper) : ControllerBase
+public class SupplyController(IRepository<Supply, int> supplyRepository,
+        IRepository<Supplier, int> supplierRepository, IRepository<Enterprise, ulong> enterpriseRepository, IMapper mapper) : ControllerBase
 {
     /// <summary>
     /// Вернуть все поставки
@@ -19,9 +21,9 @@ public class SupplyController(IRepository<Supply, int> repository, IMapper mappe
     [HttpGet]
     public ActionResult<IEnumerable<Supply>> Get()
     {
-        var supply = repository.GetAll();
+        var supply = supplyRepository.GetAll();
         if (supply == null) return NotFound();
-        return Ok();
+        return Ok(supply);
     }
 
     /// <summary>
@@ -34,7 +36,7 @@ public class SupplyController(IRepository<Supply, int> repository, IMapper mappe
     [HttpGet("{id}")]
     public ActionResult<Supply> Get(int id)
     {
-        var supply = repository.GetById(id);
+        var supply = supplyRepository.GetById(id);
 
         if (supply == null) return NotFound();
         return Ok(supply);
@@ -46,12 +48,26 @@ public class SupplyController(IRepository<Supply, int> repository, IMapper mappe
     /// <param name="item">Добавляемый объект</param>
     /// <returns>Созданный объект <see cref="Supply"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
+    /// <response code="400">Объекты не найдены</response>
     [HttpPost]
-    public IActionResult Post([FromBody] SupplyDto item)
+    public ActionResult<Supply> Post([FromBody] SupplyDto item)
     {
-        Application.Mapper servise = new(mapper);
-        var supply = servise.GetSupply(item);
-        repository.Add(supply);
+        var supplier = supplierRepository.GetById(item.IdSupplier);
+
+        if (supplier == null)
+            return NotFound("Поставщик не найден");
+
+        var enterprise = enterpriseRepository.GetById(item.MainStateRegistrationNumber);
+
+        if (enterprise == null)
+            return NotFound("Предприятие не найдено");
+
+        var supply = mapper.Map<Supply>(item);
+
+        supply.Supplier = supplier;
+        supply.Enterprise = enterprise;
+
+        supplyRepository.Add(supply);
         return Ok(supply);
     }
 
@@ -59,16 +75,29 @@ public class SupplyController(IRepository<Supply, int> repository, IMapper mappe
     /// Изменить поставку по id
     /// </summary>
     /// <param name="id">id изменяемого объекта</param>
-    /// <param name="newItem">Изменяемый объект</param>
+    /// <param name="item">Изменяемый объект</param>
     /// <returns>Измененный объект <see cref="Supply"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставка не найдена</response>
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody] SupplyDto newItem)
+    public ActionResult<Supply> Put(int id, [FromBody] SupplyDto item)
     {
-        var supply = mapper.Map<Supply>(newItem);
-        supply.Id = id;
-        if (!repository.Update(supply, id))
+        var supplier = supplierRepository.GetById(item.IdSupplier);
+
+        if (supplier == null)
+            return NotFound("Поставщик не найден");
+
+        var enterprise = enterpriseRepository.GetById(item.MainStateRegistrationNumber);
+
+        if (enterprise == null)
+            return NotFound("Предприятие не найдено");
+
+        var supply = mapper.Map<Supply>(item);
+
+        supply.Supplier = supplier;
+        supply.Enterprise = enterprise;
+
+        if (!supplyRepository.Update(supply, id))
             return NotFound();
         return Ok(supply);
     }
@@ -82,7 +111,7 @@ public class SupplyController(IRepository<Supply, int> repository, IMapper mappe
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
-        if (!repository.Delete(id)) return NotFound();
+        if (!supplyRepository.Delete(id)) return NotFound();
         return Ok();
     }
 }

@@ -15,14 +15,8 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// </summary>
     /// <returns>Список объектов <see cref="Supplier"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
-    /// <response code="404">Поставщики не найдены</response>
     [HttpGet]
-    public ActionResult<IEnumerable<Supplier>> Get()
-    {
-        var supplier = repository.GetAll();
-        if (supplier == null) return NotFound();
-        return Ok(); ;
-    }
+    public ActionResult<IEnumerable<Supplier>> Get() => Ok(repository.GetAll());
 
     /// <summary>
     /// Вернуть поставщика по id
@@ -48,7 +42,7 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <returns>Созданный объект <see cref="Supplier"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpPost]
-    public IActionResult Post([FromBody] SupplierDto item)
+    public ActionResult<Supplier> Post([FromBody] SupplierDto item)
     {
         var supplier = mapper.Map<Supplier>(item);
         repository.Add(supplier);
@@ -64,7 +58,7 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставщик не найдеа</response>
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody] SupplierDto newItem)
+    public ActionResult<Supplier> Put(int id, [FromBody] SupplierDto newItem)
     {
         var supplier = mapper.Map<Supplier>(newItem);
         supplier.Id = id;

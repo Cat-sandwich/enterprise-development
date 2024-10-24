@@ -1,4 +1,5 @@
 ﻿using EnterpriseStatistics.Application.DTO;
+using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,20 +7,18 @@ namespace EnterpriseStatistics.Server.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class QueryController() : ControllerBase
+public class QueryController(IRepository<Supply, int> supplyRepository, IRepository<Enterprise, ulong> enterpriseRepository) : ControllerBase
 {
-    private readonly List<Supply> _supplyList = EnterpriseStatisticsFileReader.ReadSupply(Path.Combine("Data", "data.csv"));
     /// <summary>
     /// Все сведения о конкретном предприятии.
     /// </summary>
     /// <param name="mainStateRegistrationNumber">ОГРН конкретного предприятия</param>
     /// <returns>Объект <see cref="Enterprise"/></returns>
-    [HttpGet("1")]
+    [HttpGet("info_specific_enterprise")]
     public ActionResult<IEnumerable<Enterprise>> InfoSpecificEnterprise(ulong mainStateRegistrationNumber)
     {
-        var specificEnterprise = _supplyList
-        .Select(e => e.Enterprise)
-        .Where(e => e.MainStateRegistrationNumber == mainStateRegistrationNumber).Distinct();
+        var specificEnterprise = enterpriseRepository.GetAll()
+        .Where(e => e.MainStateRegistrationNumber == mainStateRegistrationNumber);
 
         return Ok(specificEnterprise);
     }
@@ -30,11 +29,10 @@ public class QueryController() : ControllerBase
     /// <param name="startDate">Дата начала периода</param>
     /// <param name="endDate">Дата окончания периода</param>
     /// <returns>Список <see cref="Supplier"/></returns>
-    [HttpGet("2")]
+    [HttpGet("info_supplier_by_date")]
     public ActionResult<IEnumerable<Supplier>> InfoSupplierDate(DateTime startDate, DateTime endDate)
     {
-
-        var supplierDate = _supplyList
+        var supplierDate = supplyRepository.GetAll()
             .Where(supply => supply.Date >= startDate && supply.Date <= endDate)
             .Select(supply => supply.Supplier)
             .Distinct()
@@ -47,10 +45,10 @@ public class QueryController() : ControllerBase
     /// Количество предприятий, с которыми работает каждый поставщик.
     /// </summary>
     /// <returns>Список <see cref="EnterpriseCountsDto"/></returns>
-    [HttpGet("3")]
+    [HttpGet("count_enterprise")]
     public ActionResult<IEnumerable<EnterpriseCountsDto>> CountEnterprise()
     {
-        var supplierEnterpriseCounts = _supplyList
+        var supplierEnterpriseCounts = supplyRepository.GetAll()
        .GroupBy(supply => supply.Supplier).Distinct()
        .Select(supplier => new
        {
@@ -66,10 +64,10 @@ public class QueryController() : ControllerBase
     /// Информация о количестве поставщиков для каждого типа отрасли и форме собственности.
     /// </summary>
     /// <returns>Список <see cref="SupplierCountIndustryOwnershipDto"/></returns>
-    [HttpGet("4")]
+    [HttpGet("supplier_by_industy_and_ownership")]
     public ActionResult<IEnumerable<SupplierCountIndustryOwnershipDto>> SupplierCountIndustryOwnership()
     {
-        var result = _supplyList
+        var result = supplyRepository.GetAll()
         .GroupBy(supply => new { supply.Enterprise.IndustryType, supply.Enterprise.OwnershipForm })
         .Select(group => new
         {
@@ -86,10 +84,10 @@ public class QueryController() : ControllerBase
     /// Топ 5 предприятий по количеству поставок.
     /// </summary>
     /// <returns>Список <see cref="EnterprisesSupplyCountDto"/></returns>
-    [HttpGet("5")]
+    [HttpGet("top_5_enterprise")]
     public ActionResult<IEnumerable<EnterprisesSupplyCountDto>> Top5EnterprisesSupplyCount()
     {
-        var topEnterprises = _supplyList
+        var topEnterprises = supplyRepository.GetAll()
         .GroupBy(supply => supply.Enterprise)
         .Select(group => new
         {
@@ -107,10 +105,10 @@ public class QueryController() : ControllerBase
     /// <param name="startDate">Дата начала периода</param>
     /// <param name="endDate">Дата окончания периода</param>
     /// <returns>Список <see cref="SuppliersWithMaxSupplyDto"/></returns>
-    [HttpGet("6")]
+    [HttpGet("supplier_and_max_quantity_by_period")]
     public ActionResult<IEnumerable<SuppliersWithMaxSupplyDto>> MaxSupplierPeriod(DateTime startDate, DateTime endDate)
     {
-        var supplierQuantities = _supplyList
+        var supplierQuantities = supplyRepository.GetAll()
             .Where(s => s.Date >= startDate && s.Date <= endDate)
             .GroupBy(s => s.Supplier)
             .Select(group => new

@@ -1,34 +1,32 @@
 ﻿using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnterpriseStatistics.Domain.Repositories;
 
-public class SupplyRepository: IRepository<Supply, int>
+public class SupplyRepository(EnterpriseStatisticsDbContext context) : IRepository<Supply, int>
 {
-    private static readonly List<Supply> _supplies = [];
-    private int _supplyId = 0;
-
     /// <summary>
     /// Вернуть все поставки
     /// </summary>
     /// <returns>Список объектов <see cref="Supply"/></returns>
-    public List<Supply> GetAll() => _supplies;
+    public async Task<List<Supply>> GetAll() => await context.Supplies.Include(s => s.Supplier).Include(s => s.Enterprise).ToListAsync();
 
     /// <summary>
     /// Вернуть поставку по id
     /// </summary>
     /// <param name="id">id возвращаемого объекта</param>
     /// <returns>Объект <see cref="Supply"/> или null, если не найден</returns>
-    public Supply? GetById(int id) => _supplies.FirstOrDefault(d => d.Id == id);
+    public async Task<Supply?> GetById(int id) => await context.Supplies.Include(s => s.Supplier).Include(s => s.Enterprise).FirstOrDefaultAsync(s => s.Id == id);
 
     /// <summary>
     /// Добавить поставку
     /// </summary>
     /// <param name="newItem">добавляемый объект</param>
-    public void Add(Supply newItem)
+    public async Task Add(Supply newItem)
     {
-        newItem.Id = _supplyId++;
-        _supplies.Add(newItem);
+        await context.Supplies.AddAsync(newItem);
+        await context.SaveChangesAsync();
     }
 
     /// <summary>
@@ -37,17 +35,19 @@ public class SupplyRepository: IRepository<Supply, int>
     /// <param name="newItem">объект с новыми значениями</param>
     /// <param name="id">id изменяемого объекта</param>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
-    public bool Update(Supply newItem, int id)
+    public async Task<bool> Update(Supply newItem, int id)
     {
-        var supply = GetById(id);
+        var supply = await GetById(id);
 
         if (supply == null) return false;
 
-        supply.Id = newItem.Id;
         supply.Supplier = newItem.Supplier;
         supply.Enterprise = newItem.Enterprise;
         supply.Quanity = newItem.Quanity;
         supply.Date = newItem.Date;
+
+        context.Supplies.Update(supply);
+        await context.SaveChangesAsync();
 
         return true;
     }
@@ -57,13 +57,16 @@ public class SupplyRepository: IRepository<Supply, int>
     /// </summary>
     /// <param name="id">id удаляемого объекта</param>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
-    public bool Delete(int id)
+    public async Task<bool> Delete(int id)
     {
-        var supplier = GetById(id);
+        var supply = await GetById(id);
 
-        if (supplier == null)
+        if (supply == null)
             return false;
-                
-        return _supplies.Remove(supplier);
+
+        context.Supplies.Remove(supply);
+        await context.SaveChangesAsync();
+
+        return true;
     }
 }

@@ -3,7 +3,6 @@ using AutoMapper;
 using EnterpriseStatistics.Domain.Models;
 using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Application.DTO;
-using System.Numerics;
 
 namespace EnterpriseStatistics.Server.Controllers;
 
@@ -17,7 +16,7 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <returns>Список объектов <see cref="EnterpriseDto"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpGet]
-    public ActionResult<IEnumerable<Enterprise>> Get() => Ok(repository.GetAll());
+    public async Task<ActionResult<IEnumerable<Enterprise>>> Get() => Ok(await repository.GetAll());
 
     /// <summary>
     /// Вернуть предприятие по ОГРН
@@ -27,9 +26,9 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Предприятие не найдено</response>
     [HttpGet("{mainStateRegistrationNumber}")]
-    public ActionResult<Enterprise> Get(ulong mainStateRegistrationNumber)
+    public async Task<ActionResult<Enterprise>> Get(ulong mainStateRegistrationNumber)
     {
-        var enterprise = repository.GetById(mainStateRegistrationNumber);
+        var enterprise = await repository.GetById(mainStateRegistrationNumber);
 
         if (enterprise == null)
             return NotFound();
@@ -44,10 +43,10 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <returns>Созданный объект <see cref="Enterprise"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpPost]
-    public ActionResult<Enterprise> Post([FromBody] EnterpriseDto item)
+    public async Task<ActionResult<Enterprise>> Post([FromBody] EnterpriseDto item)
     {
         var enterprise = mapper.Map<Enterprise>(item);
-        repository.Add(enterprise);
+        await repository.Add(enterprise);
         return Ok(enterprise);
     }
 
@@ -60,10 +59,10 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Предприятие не найдено</response>
     [HttpPut("{mainStateRegistrationNumber}")]
-    public ActionResult<Enterprise> Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
+    public async Task<ActionResult<Enterprise>> Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
     {
         var enterprise = mapper.Map<Enterprise>(item);
-        if (!repository.Update(enterprise, mainStateRegistrationNumber))
+        if (!await repository.Update(enterprise, mainStateRegistrationNumber))
             return NotFound();
         return Ok(enterprise);
     }
@@ -75,9 +74,9 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Предприятие не найдено</response>
     [HttpDelete("{mainStateRegistrationNumber}")]
-    public IActionResult Delete(ulong mainStateRegistrationNumber)
+    public async Task<IActionResult> Delete(ulong mainStateRegistrationNumber)
     {
-        if (!repository.Delete(mainStateRegistrationNumber)) return NotFound();
+        if (!await repository.Delete(mainStateRegistrationNumber)) return NotFound();
         return Ok();
     }
 }

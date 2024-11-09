@@ -16,7 +16,7 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <returns>Список объектов <see cref="Supplier"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpGet]
-    public ActionResult<IEnumerable<Supplier>> Get() => Ok(repository.GetAll());
+    public async Task<ActionResult<IEnumerable<Supplier>>> Get() => Ok(await repository.GetAll());
 
     /// <summary>
     /// Вернуть поставщика по id
@@ -26,9 +26,9 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставщик не найден</response>
     [HttpGet("{id}")]
-    public ActionResult<Supplier> Get(int id)
+    public async Task<ActionResult<Supplier>> Get(int id)
     {
-        var supplier = repository.GetById(id);
+        var supplier = await repository.GetById(id);
 
         if (supplier == null) return NotFound();
 
@@ -42,10 +42,10 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <returns>Созданный объект <see cref="Supplier"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     [HttpPost]
-    public ActionResult<Supplier> Post([FromBody] SupplierDto item)
+    public async Task<ActionResult<Supplier>> Post([FromBody] SupplierDto item)
     {
         var supplier = mapper.Map<Supplier>(item);
-        repository.Add(supplier);
+        await repository.Add(supplier);
         return Ok(supplier);
     }
 
@@ -58,11 +58,11 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставщик не найдеа</response>
     [HttpPut("{id}")]
-    public ActionResult<Supplier> Put(int id, [FromBody] SupplierDto newItem)
+    public async Task<ActionResult<Supplier>> Put(int id, [FromBody] SupplierDto newItem)
     {
         var supplier = mapper.Map<Supplier>(newItem);
         supplier.Id = id;
-        if (!repository.Update(supplier, id)) return NotFound();
+        if (!await repository.Update(supplier, id)) return NotFound();
         return Ok(supplier);
     }
 
@@ -73,9 +73,9 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставщик не найден</response>
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        if (!repository.Delete(id)) return NotFound();
+        if (!await repository.Delete(id)) return NotFound();
         return Ok();
     }
 }

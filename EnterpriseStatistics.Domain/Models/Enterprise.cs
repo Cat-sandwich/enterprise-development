@@ -1,10 +1,13 @@
-﻿namespace EnterpriseStatistics.Domain.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace EnterpriseStatistics.Domain.Models;
 
 /// <summary>
 /// Предприятие
 /// </summary>
 public class Enterprise
 {
+    [Key]
     /// <summary>
     /// Идентификатор предприятия - ОГРН
     /// </summary>

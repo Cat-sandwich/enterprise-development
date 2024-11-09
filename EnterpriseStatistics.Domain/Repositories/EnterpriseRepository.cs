@@ -1,33 +1,35 @@
 ﻿using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnterpriseStatistics.Domain.Repositories;
 
-public class EnterpriseRepository: IRepository<Enterprise, ulong>
+public class EnterpriseRepository(EnterpriseStatisticsDbContext context): IRepository<Enterprise, ulong>
 {
-    private static readonly List<Enterprise> _enterprises = [];
-
     /// <summary>
     /// Вернуть список предприятий
     /// </summary>
     /// <returns>Список объектов <see cref="Enterprise"/></returns>
-    public List<Enterprise> GetAll() => _enterprises;
+    public async Task<List<Enterprise>> GetAll() => await context.Enterprises.ToListAsync();
 
     /// <summary>
     /// Вернуть предприятие по id
     /// </summary>
     /// <param name="id">id возвращаемого объекта</param>
     /// <returns>Объект <see cref="Enterprise"/> или null, если не найден</returns>
-    public Enterprise? GetById(ulong id) => _enterprises.FirstOrDefault(d => d.MainStateRegistrationNumber == id);
+    public async Task<Enterprise?> GetById(ulong id) => await context.Enterprises.FirstOrDefaultAsync(e => e.MainStateRegistrationNumber == id);
 
     /// <summary>
     /// Добавить предприятие
     /// </summary>
     /// <param name="newItem">добавляемый объект</param>
-    public void Add(Enterprise newItem)
+    public async Task Add(Enterprise newItem)
     {
-        if(GetById(newItem.MainStateRegistrationNumber) == null)
-            _enterprises.Add(newItem);
+        if (await GetById(newItem.MainStateRegistrationNumber) == null)
+        {
+            await context.Enterprises.AddAsync(newItem);
+            await context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
@@ -36,13 +38,12 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
     /// <param name="newItem">объект с новыми значениями</param>
     /// <param name="id">id изменяемого объекта</param>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
-    public bool Update(Enterprise newItem, ulong id)
+    public async Task<bool> Update(Enterprise newItem, ulong id)
     {
-        var enterprise = GetById(id);
+        var enterprise = await GetById(id);
 
         if (enterprise == null) return false;
 
-        enterprise.MainStateRegistrationNumber = newItem.MainStateRegistrationNumber;
         enterprise.Name = newItem.Name;
         enterprise.Address = newItem.Address;
         enterprise.Phone = newItem.Phone;
@@ -50,6 +51,9 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
         enterprise.TotalArea = newItem.TotalArea;
         enterprise.IndustryType = newItem.IndustryType;
         enterprise.OwnershipForm = newItem.OwnershipForm;
+
+        context.Enterprises.Update(enterprise);
+        await context.SaveChangesAsync();
 
         return true;
     }
@@ -59,12 +63,16 @@ public class EnterpriseRepository: IRepository<Enterprise, ulong>
     /// </summary>
     /// <param name="id">id удаляемого объекта</param>
     /// <returns>false, если не удалось найти элемент по id, true - иначе</returns>
-    public bool Delete(ulong id)
+    public async Task<bool> Delete(ulong id)
     {
-        var enterprise = GetById(id);
+        var enterprise = await GetById(id);
 
         if (enterprise == null)
             return false;
-        return _enterprises.Remove(enterprise);
+
+        context.Enterprises.Remove(enterprise);
+        await context.SaveChangesAsync();
+
+        return true;
     }
 }

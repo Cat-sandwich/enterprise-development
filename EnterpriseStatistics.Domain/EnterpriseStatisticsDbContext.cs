@@ -43,6 +43,8 @@ public class EnterpriseStatisticsDbContext(DbContextOptions<EnterpriseStatistics
             .WithMany()
             .HasForeignKey("enterprise_id")
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.ToSnakeCase();
     }
 }
 

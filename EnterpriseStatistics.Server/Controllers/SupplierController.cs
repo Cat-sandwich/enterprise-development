@@ -44,6 +44,12 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     [HttpPost]
     public async Task<ActionResult<Supplier>> Post([FromBody] SupplierDto item)
     {
+        if (string.IsNullOrWhiteSpace(item.FullName))
+            return BadRequest("ФИО обязательно для заполнения");
+        if (string.IsNullOrWhiteSpace(item.Address))
+            return BadRequest("Адрес обязателен к заполнению");
+        if (string.IsNullOrWhiteSpace(item.Phone))
+            return BadRequest("Телефон обязателен к заполнению");
         var supplier = mapper.Map<Supplier>(item);
         await repository.Add(supplier);
         return Ok(supplier);
@@ -53,14 +59,20 @@ public class SupplierController(IRepository<Supplier, int> repository, IMapper m
     /// Изменить поставщика по id
     /// </summary>
     /// <param name="id">id изменяемого объекта</param>
-    /// <param name="newItem">Изменяемый объект</param>
+    /// <param name="item">Изменяемый объект</param>
     /// <returns>Измененный объект <see cref="Supplier"/></returns>
     /// <response code="200">Запрос выполнен успешно</response>
     /// <response code="404">Поставщик не найдеа</response>
     [HttpPut("{id}")]
-    public async Task<ActionResult<Supplier>> Put(int id, [FromBody] SupplierDto newItem)
+    public async Task<ActionResult<Supplier>> Put(int id, [FromBody] SupplierDto item)
     {
-        var supplier = mapper.Map<Supplier>(newItem);
+        if (string.IsNullOrWhiteSpace(item.FullName))
+            return BadRequest("ФИО обязательно для заполнения");
+        if (string.IsNullOrWhiteSpace(item.Address))
+            return BadRequest("Адрес обязателен к заполнению");
+        if (string.IsNullOrWhiteSpace(item.Phone))
+            return BadRequest("Телефон обязателен к заполнению");
+        var supplier = mapper.Map<Supplier>(item);
         supplier.Id = id;
         if (!await repository.Update(supplier, id)) return NotFound();
         return Ok(supplier);

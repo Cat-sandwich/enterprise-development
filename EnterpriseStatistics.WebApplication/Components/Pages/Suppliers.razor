@@ -1,0 +1,179 @@
+﻿@page "/suppliers"
+@using System.Globalization;
+@inject HttpClient Http
+
+<PageTitle>Suppliers</PageTitle>
+
+<h1>Поставщики</h1>
+
+<Button class="add-new-button" Clicked="@ShowAddModal" Color="Blazorise.Color.Primary" Style="width: 200px; height: 40px;">
+    Добавить поставщика
+</Button>
+
+
+<div class="data-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>ФИО</th>
+                <th>Адрес</th>
+                <th>Телефон</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var supplier in _suppliers)
+            {
+                <tr>
+                    <td>@supplier.Id</td>
+                    <td>@supplier.FullName</td>
+                    <td>@supplier.Address</td>
+                    <td>@supplier.Phone</td>
+                    <td>
+                        <Button 
+                                class="edit-item"
+                                @onclick="@(() => ShowUpdModal(supplier.Id))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+                    <td>
+                        <Button class="edit-item"
+                                @onclick="@(() => DeleteSupplier(supplier.Id))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+<Modal @ref="modalRef" >
+    <ModalContent Centered>
+        <ModalBody>
+            <div class="mb-3">
+                <label for="name">ФИО:</label>
+                <input type="text" id="name" @bind="newSupplier.FullName" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="address">Адрес:</label>
+                <input type="text" id="address" @bind="newSupplier.Address" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="phone">Телефон:</label>
+                <input type="text" id="phone" @bind="newSupplier.Phone" class="form-control" />
+            </div>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Blazorise.Color.Primary" Clicked="@(forAdd ? AddNewSupplier : UpdateSupplier)">
+                @(forAdd ? "Добавить" : "Изменить")
+            </Button>
+            <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                Отмена
+            </Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+
+@code {
+    private List<Supplier> _suppliers = new();
+    private Modal? modalRef = null!;
+    private Supplier newSupplier = new() 
+    {       Id = 0,
+            FullName = "",
+            Address = "",
+            Phone = ""
+    };
+    private bool forAdd = true;
+    private string supplierUrl = "api/Supplier";
+
+    private async Task UpdateMainList()
+    {
+        var response = await Http.GetFromJsonAsync<List<Supplier>>(supplierUrl);
+        if (response != null)
+        {
+            _suppliers = response;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateMainList();
+    }
+
+    private async Task AddNewSupplier()
+    {
+        await Http.PostAsJsonAsync<Supplier>(supplierUrl, newSupplier);
+        await UpdateMainList();
+        await modalRef!.Hide();
+    }
+
+    private async Task DeleteSupplier(int id)
+    {
+        await Http.DeleteAsync($"{supplierUrl}/{id}");
+        await UpdateMainList();
+
+        // var directions = await Http.GetFromJsonAsync<List<Domain.Models.Direction>>("api/Direction");
+        // if (directions != null)
+        // {
+        //     directions = directions.Where(d => d.ApplicantId == applicantId).ToList();
+        //     foreach (var d in directions)
+        //     {
+        //         await Http.DeleteAsync($"api/Direction/{d.Id}");
+        //     }
+        // }
+    }
+
+    private async Task UpdateSupplier()
+    {
+        await Http.PutAsJsonAsync($"{supplierUrl}/{newSupplier.Id}", newSupplier);
+
+        newSupplier = new()
+            {
+                Id = 0,
+                FullName = "",
+                Address = "",
+                Phone = ""
+            };
+        await UpdateMainList();
+        await modalRef!.Hide();
+    }
+
+    private async Task ShowUpdModal(int id)
+    {
+        forAdd = false;
+        var response = await Http.GetFromJsonAsync<Supplier>($"{supplierUrl}/{id}");
+        if (response != null)
+        {
+            newSupplier = response;
+        }
+        await modalRef!.Show();
+    }
+
+    private async Task ShowAddModal() {
+        forAdd = true;
+        newSupplier = new()
+            {
+                Id = 0,
+                FullName = "",
+                Address = "",
+                Phone = ""
+            };
+        await modalRef!.Show();
+    }
+
+    private async Task CancelHandler()
+    {
+        await modalRef!.Hide();
+    }
+
+} 

@@ -1,0 +1,265 @@
+﻿@page "/supplies"
+@using System.Globalization;
+@inject HttpClient Http
+
+<PageTitle>Supplies</PageTitle>
+
+<h1>Поставки</h1>
+
+<Button class="add-new-button" Clicked="@ShowAddModal" Color="Blazorise.Color.Primary" Style="width: 200px; height: 40px;">
+    Добавить поставку
+</Button>
+
+
+<div class="data-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Поставщик</th>
+                <th>Предприятие</th>
+                <th>Количество единиц сырья</th>
+                <th>Дата поставки</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var supply in _supplies)
+            {
+                <tr>
+                    <td>@supply.Id</td>
+                    <td>@(GetSupplierName(supply.Supplier.Id))</td>
+                    <td>@(GetEnterpriseName(supply.Enterprise.MainStateRegistrationNumber))</td>
+                    <td>@supply.Quanity</td>
+                    <td>@supply.Date</td>
+                    <td>
+                        <Button 
+                                class="edit-item"
+                                @onclick="@(() => ShowUpdModal(supply.Id))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+                    <td>
+                        <Button class="edit-item"
+                                @onclick="@(() => DeleteSupply(supply.Id))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+<Modal @ref="modalRef" >
+    <ModalContent Centered>
+        <ModalBody>
+            <div class="mb-3">
+                <label for="supplier">Поставщик:</label>
+                <select id="supplier" @bind="newSupply.Supplier.Id">
+                    @foreach (var supplier in _suppliers)
+                    {
+                        <option>@supplier.Id</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="enterprise">Предприятие:</label>
+                <select id="enterprise" @bind="newSupply.Enterprise.MainStateRegistrationNumber">
+                    @foreach (var enterprise in _enterprises)
+                    {
+                        <option>@enterprise.MainStateRegistrationNumber</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="phone">Количество единиц сырья:</label>
+                <input type="text" id="phone" @bind="newSupply.Quanity" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="employeeCount">Дата поставки:</label>
+                <input type="date" id="employeeCount" @bind="newSupply.Date" class="form-control" />
+            </div>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Blazorise.Color.Primary" Clicked="@(forAdd ? AddNewSupply : UpdateSupply)">
+                @(forAdd ? "Добавить" : "Изменить")
+            </Button>
+            <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                Отмена
+            </Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+
+@code {
+    private List<Supply> _supplies = new();
+    private List<Supplier> _suppliers = new();
+    private List<Enterprise> _enterprises = new();
+
+    private Modal? modalRef = null!;
+    private Supply newSupply = new() 
+    {       Id = 0,
+            Supplier = new()
+        {
+                Id = 0,
+                FullName = "",
+                Address = "",
+                Phone = ""            
+        },
+        Enterprise = new()
+        {
+                MainStateRegistrationNumber = 0,
+                Name = "",
+                Address = "",
+                Phone = "",
+                EmployeeCount = 0,
+                TotalArea = 0,
+                IndustryType = IndustryTypes.AgriculturalIndustry,
+                OwnershipForm = OwnershipForms.LimitedLiabilityPartnership
+        },
+            Quanity = 0,
+            Date = DateTime.ParseExact("01.01.2000", "dd.MM.yyyy", CultureInfo.InvariantCulture)
+        };
+    private bool forAdd = true;
+    private string supplyUrl = "api/Supply";
+
+    private async Task LoadSuppliers()
+    {
+        var response = await Http.GetFromJsonAsync<List<Supplier>>("api/Supplier");
+        if (response != null)
+        {
+            _suppliers = response;
+            newSupply.Supplier.Id = _suppliers.Select(s => s.Id).First();
+        }
+    }
+
+    private async Task LoadEnterprises()
+    {
+        var response = await Http.GetFromJsonAsync<List<Enterprise>>("api/Enterprise");
+        if (response != null)
+        {
+            _enterprises = response;
+            newSupply.Enterprise.MainStateRegistrationNumber = _enterprises.Select(e => e.MainStateRegistrationNumber).First();
+        }
+
+    }
+
+    private string GetEnterpriseName(ulong id) => _enterprises?.FirstOrDefault(e => e.MainStateRegistrationNumber == id)?.Name!;
+
+    private string GetSupplierName(int id) => _suppliers?.FirstOrDefault(s => s.Id == id)?.FullName!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateMainList();
+        await LoadSuppliers();
+        await LoadEnterprises();
+    }
+
+    private async Task UpdateMainList()
+    {
+        var response = await Http.GetFromJsonAsync<List<Supply>>(supplyUrl);
+        if (response != null)
+        {
+            _supplies = response;
+        }
+    }
+
+    private async Task AddNewSupply()
+    {
+        var newItem = new SupplyDto
+            {
+                IdSupplier = newSupply.Supplier.Id,
+                MainStateRegistrationNumber = newSupply.Enterprise.MainStateRegistrationNumber,
+                Quanity = newSupply.Quanity,
+                Date = newSupply.Date
+            };
+        await Http.PostAsJsonAsync<SupplyDto>(supplyUrl, newItem);
+        await UpdateMainList();
+        await modalRef!.Hide();
+    }
+
+    private async Task DeleteSupply(int id)
+    {
+        await Http.DeleteAsync($"{supplyUrl}/{id}");
+        await UpdateMainList();
+    }
+
+    private async Task UpdateSupply()
+    {
+        var newItem = new SupplyDto
+            {
+                IdSupplier = newSupply.Supplier.Id,
+                MainStateRegistrationNumber = newSupply.Enterprise.MainStateRegistrationNumber,
+                Quanity = newSupply.Quanity,
+                Date = newSupply.Date
+            };
+        await Http.PutAsJsonAsync($"{supplyUrl}/{newSupply.Id}", newItem);
+
+        newSupply = new()
+            {
+                Id = 0,
+                Supplier = _suppliers.First(),
+                Enterprise = _enterprises.First(),
+                Quanity = 0,
+                Date = DateTime.ParseExact("01.01.2000", "dd.MM.yyyy", CultureInfo.InvariantCulture)
+            };
+
+        await UpdateMainList();
+        await modalRef!.Hide();
+    }
+
+    private async Task ShowUpdModal(int id)
+    {
+        forAdd = false;
+        var response = await Http.GetFromJsonAsync<Supply>($"{supplyUrl}/{id}");
+        if (response != null)
+        {
+            newSupply = response;
+        }
+        await modalRef!.Show();
+    }
+
+    private async Task ShowAddModal() {
+        forAdd = true;
+        newSupply = new()
+            {
+                Id = 0,
+                Supplier = new()
+                {
+                    Id = 0,
+                    FullName = "",
+                    Address = "",
+                    Phone = ""
+                },
+                Enterprise = new()
+                {
+                    MainStateRegistrationNumber = 0,
+                    Name = "",
+                    Address = "",
+                    Phone = "",
+                    EmployeeCount = 0,
+                    TotalArea = 0,
+                    IndustryType = IndustryTypes.AgriculturalIndustry,
+                    OwnershipForm = OwnershipForms.LimitedLiabilityPartnership
+                },
+                Quanity = 0,
+                Date = DateTime.ParseExact("01.01.1990", "dd.MM.yyyy", CultureInfo.InvariantCulture)
+            };
+        await modalRef!.Show();
+    }
+
+    private async Task CancelHandler()
+    {
+        await modalRef!.Hide();
+    }
+
+} 

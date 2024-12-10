@@ -46,6 +46,9 @@ public class SupplyController(IRepository<Supply, int> supplyRepository,
     [HttpPost]
     public async Task<ActionResult<Supply>> Post([FromBody] SupplyDto item)
     {
+        if (item.Quanity <= 0)
+            return BadRequest("Количество единиц сырья должно быть больше 0"); 
+
         var supplier = await supplierRepository.GetById(item.IdSupplier);
 
         if (supplier == null)
@@ -76,6 +79,9 @@ public class SupplyController(IRepository<Supply, int> supplyRepository,
     [HttpPut("{id}")]
     public async Task<ActionResult<Supply>> Put(int id, [FromBody] SupplyDto item)
     {
+        if (item.Quanity <= 0)
+            return BadRequest("Количество единиц сырья должно быть больше 0");
+
         var supplier = await supplierRepository.GetById(item.IdSupplier);
 
         if (supplier == null)

@@ -45,6 +45,19 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     [HttpPost]
     public async Task<ActionResult<Enterprise>> Post([FromBody] EnterpriseDto item)
     {
+        if(item.MainStateRegistrationNumber < 1000000000000 || item.MainStateRegistrationNumber > 10000000000000)
+            return BadRequest("ОГРН должен содержать 13 цифр");
+        if (string.IsNullOrWhiteSpace(item.Name))
+            return BadRequest("Название обязательно для заполнения");
+        if (string.IsNullOrWhiteSpace(item.Address))
+            return BadRequest("Адрес обязателен к заполнению");
+        if (string.IsNullOrWhiteSpace(item.Phone))
+            return BadRequest("Телефон обязателен к заполнению");
+        if (item.EmployeeCount <= 0)
+            return BadRequest("Количество сотрудников должно быть больше 0");
+        if (item.TotalArea <= 0)
+            return BadRequest("Общая площадь должна быть больше 0");
+
         var enterprise = mapper.Map<Enterprise>(item);
         await repository.Add(enterprise);
         return Ok(enterprise);
@@ -61,6 +74,19 @@ public class EnterpriseController(IRepository<Enterprise, ulong> repository, IMa
     [HttpPut("{mainStateRegistrationNumber}")]
     public async Task<ActionResult<Enterprise>> Put(ulong mainStateRegistrationNumber, [FromBody] EnterpriseDto item)
     {
+        if (item.MainStateRegistrationNumber < 1000000000000 || item.MainStateRegistrationNumber > 10000000000000)
+            return BadRequest("ОГРН должен содержать 13 цифр");
+        if (string.IsNullOrWhiteSpace(item.Name))
+            return BadRequest("Название обязательно для заполнения");
+        if (string.IsNullOrWhiteSpace(item.Address))
+            return BadRequest("Адрес обязателен к заполнению");
+        if (string.IsNullOrWhiteSpace(item.Phone))
+            return BadRequest("Телефон обязателен к заполнению");
+        if (item.EmployeeCount <= 0)
+            return BadRequest("Количество сотрудников должно быть больше 0");
+        if (item.TotalArea <= 0)
+            return BadRequest("Общая площадь должна быть больше 0");
+
         var enterprise = mapper.Map<Enterprise>(item);
         if (!await repository.Update(enterprise, mainStateRegistrationNumber))
             return NotFound();

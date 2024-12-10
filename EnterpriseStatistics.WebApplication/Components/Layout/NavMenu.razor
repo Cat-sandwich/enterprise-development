@@ -1,0 +1,43 @@
+﻿@using MudBlazor
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">EnterpriseStatistics</a>
+    </div>
+</div>
+
+
+<div class="nav-scrollable">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.Business" Class="icon" />
+                <span class="bi" aria-hidden="true"></span>
+                Предприятия
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/suppliers" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="icon" Color="MudBlazor.Color.Default"  />
+                <span class="bi" aria-hidden="true"></span>
+                Поставщики
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/supplies" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory" Class="icon" />
+                <span class="bi" aria-hidden="true"></span>
+                Поставки
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/queries" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.QueryStats" Class="icon" />
+                <span class="bi" aria-hidden="true"></span>
+                Запросы
+            </NavLink>
+        </div>
+
+        
+    </nav>
+</div>
+

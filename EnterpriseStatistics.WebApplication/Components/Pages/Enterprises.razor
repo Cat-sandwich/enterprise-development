@@ -1,0 +1,242 @@
+﻿@page "/"
+@using System.Globalization;
+@inject HttpClient Http
+
+<PageTitle>Enterprise</PageTitle>
+
+<h1>Предприятия</h1>
+
+<Button class="add-new-button" Clicked="@ShowAddModal" Color="Blazorise.Color.Primary" Style="width: 200px; height: 40px;">
+    Добавить предприятие
+</Button>
+
+<div class="data-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ОГРН</th>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th>Телефон</th>
+                <th>Количество работников</th>
+                <th>Общая площадь</th>
+                <th>Тип отрасли</th>
+                <th>Форма собственности</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var enterprise in _enterprises)
+            {
+                <tr>
+                    <td>@enterprise.MainStateRegistrationNumber</td>
+                    <td>@enterprise.Name</td>
+                    <td>@enterprise.Address</td>
+                    <td>@enterprise.Phone</td>
+                    <td>@enterprise.EmployeeCount</td>
+                    <td>@enterprise.TotalArea</td>
+                    <td>@enterprise.IndustryType</td>
+                    <td>@enterprise.OwnershipForm</td>
+                    <td>
+                        <Button 
+                                class="edit-item"
+                                @onclick="@(() => ShowUpdModal(enterprise.MainStateRegistrationNumber))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+                    <td>
+                        <Button class="edit-item"
+                                @onclick="@(() => DeleteEnterprise(enterprise.MainStateRegistrationNumber))"
+                                Style="max-width: 89px"
+                                TextAlignment="TextAlignment.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Style="width: 20px; height: 20px;" />
+                        </Button>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+<Modal @ref="modalRef" >
+    <ModalContent Centered>
+        <ModalBody>
+            <div class="mb-3">
+                <label for="mainStateRegistrationNumber">ОГРН:</label>
+                <input type="number" id="mainStateRegistrationNumber" @bind="newEnterprise.MainStateRegistrationNumber" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="name">Название:</label>
+                <input type="text" id="name" @bind="newEnterprise.Name" class="form-control" />
+
+            </div>
+            <div class="mb-3">
+                <label for="address">Адрес:</label>
+                <input type="text" id="address" @bind="newEnterprise.Address" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="phone">Телефон:</label>
+                <input type="text" id="phone" @bind="newEnterprise.Phone" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="employeeCount">Количество работников:</label>
+                <input type="number" id="employeeCount" @bind="newEnterprise.EmployeeCount" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="totalArea">Общая площадь:</label>
+                <input type="number" id="totalArea" @bind="newEnterprise.TotalArea" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="industryType">Тип отрасли:</label>
+                <select id="industryType" @bind="newEnterprise.IndustryType">
+                    @foreach (var industryType in Enum.GetValues<IndustryTypes>())
+                    {
+                        <option value="@industryType">@industryType</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="ownershipForm">Форма собственности:</label>
+                <select id="ownershipForm" @bind="newEnterprise.OwnershipForm">
+                    @foreach (var ownershipForm in Enum.GetValues<OwnershipForms>())
+                    {
+                        <option value="@ownershipForm">@ownershipForm</option>
+                    }
+                </select>
+            </div>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Blazorise.Color.Primary" Clicked="@(forAdd ? AddNewEnterprise : UpdateEnterprise)">
+                @(forAdd ? "Добавить" : "Изменить")
+            </Button>
+            <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                Отмена
+            </Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+
+
+@code {
+    private List<Enterprise> _enterprises = new();
+    private Modal? modalRef = null!;
+    private Enterprise newEnterprise = new() 
+    {       MainStateRegistrationNumber = 0,
+            Name = "",
+            Address = "",
+            Phone = "",
+            EmployeeCount = 0,
+            TotalArea = 0,
+            IndustryType = IndustryTypes.AgriculturalIndustry,
+            OwnershipForm = OwnershipForms.LimitedLiabilityPartnership};
+    private bool forAdd = true;
+    private string enterpriseUrl = "api/Enterprise";
+
+    private async Task UpdateMainList()
+    {
+        var response = await Http.GetFromJsonAsync<List<Enterprise>>(enterpriseUrl);
+        if (response != null)
+        {
+            _enterprises = response;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateMainList();
+    }
+
+    private async Task AddNewEnterprise()
+    {
+        var newItem = new EnterpriseDto
+            {
+                Name = newEnterprise.Name,
+                MainStateRegistrationNumber = newEnterprise.MainStateRegistrationNumber,
+                Address = newEnterprise.Address,
+                Phone = newEnterprise.Phone,
+                EmployeeCount = newEnterprise.EmployeeCount,
+                TotalArea = newEnterprise.TotalArea,
+                IndustryType = newEnterprise.IndustryType.ToString(),
+                OwnershipForm = newEnterprise.OwnershipForm.ToString()
+            };
+        await Http.PostAsJsonAsync<EnterpriseDto>(enterpriseUrl, newItem);
+        
+        await UpdateMainList();
+        await modalRef!.Hide();
+
+    }
+
+    private async Task DeleteEnterprise(ulong mainStateRegistrationNumber)
+    {
+        await Http.DeleteAsync($"{enterpriseUrl}/{mainStateRegistrationNumber}");
+        await UpdateMainList();
+    }
+
+    private async Task UpdateEnterprise()
+    {
+        var newItem = new EnterpriseDto
+            {
+                Name = newEnterprise.Name,
+                MainStateRegistrationNumber = newEnterprise.MainStateRegistrationNumber,
+                Address = newEnterprise.Address,
+                Phone = newEnterprise.Phone,
+                EmployeeCount = newEnterprise.EmployeeCount,
+                TotalArea = newEnterprise.TotalArea,
+                IndustryType = newEnterprise.IndustryType.ToString(),
+                OwnershipForm = newEnterprise.OwnershipForm.ToString()
+            };
+        await Http.PutAsJsonAsync($"{enterpriseUrl}/{newEnterprise.MainStateRegistrationNumber}", newItem);
+
+        newEnterprise = new()
+            {
+                MainStateRegistrationNumber = 0,
+                Name = "",
+                Address = "",
+                Phone = "",
+                EmployeeCount = 0,
+                TotalArea = 0,
+                IndustryType = IndustryTypes.AgriculturalIndustry,
+                OwnershipForm = OwnershipForms.LimitedLiabilityPartnership
+            };
+        await UpdateMainList();
+        await modalRef!.Hide();
+    }
+
+    private async Task ShowUpdModal(ulong mainStateRegistrationNumber)
+    {
+        forAdd = false;
+        var response = await Http.GetFromJsonAsync<Enterprise>($"{enterpriseUrl}/{mainStateRegistrationNumber}");
+        if (response != null)
+        {
+            newEnterprise = response;
+        }
+        await modalRef!.Show();
+    }
+
+    private async Task ShowAddModal() {
+        forAdd = true;
+        newEnterprise = new()
+            {
+                MainStateRegistrationNumber = 0,
+                Name = "",
+                Address = "",
+                Phone = "",
+                EmployeeCount = 0,
+                TotalArea = 0,
+                IndustryType = IndustryTypes.AgriculturalIndustry,
+                OwnershipForm = OwnershipForms.LimitedLiabilityPartnership
+            }; 
+        await modalRef!.Show();
+    }
+
+    private async Task CancelHandler()
+    {
+        await modalRef!.Hide();
+    }
+} 

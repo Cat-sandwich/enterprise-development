@@ -1,0 +1,46 @@
+﻿.main-layout {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+.table-container {
+    flex: 2; /* Основное пространство под таблицу */
+    min-width: 60%;
+}
+
+.requests-container {
+    flex: 1; /* Меньшее пространство для списка запросов */
+    min-width: 25%;
+    border-left: 1px solid #ddd;
+    padding-left: 20px;
+}
+
+.request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.task-container {
+    margin: 20px;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .header-container label,
+    .header-container select {
+        margin-right: 5px;
+    }
+
+.button-container {
+    display: flex;
+    gap: 10px;
+}
+h5 {
+    font-size: 20px;
+}

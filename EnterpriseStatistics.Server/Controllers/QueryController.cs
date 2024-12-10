@@ -2,6 +2,7 @@
 using EnterpriseStatistics.Domain.Interfaces;
 using EnterpriseStatistics.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace EnterpriseStatistics.Server.Controllers;
 
@@ -31,6 +32,8 @@ public class QueryController(IRepository<Supply, int> supplyRepository, IReposit
     [HttpGet("info_supplier_by_date")]
     public async Task<ActionResult<IEnumerable<Supplier>>> InfoSupplierDate(DateTime startDate, DateTime endDate)
     {
+        if (DateTime.Compare(startDate, endDate) >= 0)
+            return BadRequest("Дата начала меньше даты окончания");
         var supplierDate = await supplyRepository.GetAll();
             
         return Ok(supplierDate
@@ -67,16 +70,16 @@ public class QueryController(IRepository<Supply, int> supplyRepository, IReposit
     [HttpGet("supplier_by_industy_and_ownership")]
     public async Task<ActionResult<IEnumerable<SupplierCountIndustryOwnershipDto>>> SupplierCountIndustryOwnership()
     {
-        var result = await supplyRepository.GetAll();        
-
-        return Ok(result
+        var result = await supplyRepository.GetAll();
+        var tmp = result
             .GroupBy(supply => new { supply.Enterprise.IndustryType, supply.Enterprise.OwnershipForm })
             .Select(group => new
             {
                 group.Key.IndustryType,
                 group.Key.OwnershipForm,
-                SupplierCount = group.Select(s => s.Supplier.Id).Distinct().Count()
-            }).ToList());
+                Count = group.Select(s => s.Supplier.Id).Distinct().Count()
+            }).ToList();
+        return Ok(tmp);
     }
 
     /// <summary>
@@ -105,6 +108,8 @@ public class QueryController(IRepository<Supply, int> supplyRepository, IReposit
     [HttpGet("supplier_and_max_quantity_by_period")]
     public async Task<ActionResult<IEnumerable<SuppliersWithMaxSupplyDto>>> MaxSupplierPeriod(DateTime startDate, DateTime endDate)
     {
+        if (DateTime.Compare(startDate, endDate) >= 0 )
+            return BadRequest("Дата начала меньше даты окончания");
         var suppliers = await supplyRepository.GetAll();
         var supplierQuantities = suppliers
             .Where(s => s.Date >= startDate && s.Date <= endDate)

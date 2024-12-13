@@ -1,6 +1,6 @@
 ﻿@page "/supplies"
-@using System.Globalization;
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <PageTitle>Supplies</PageTitle>
 
@@ -58,45 +58,61 @@
 
 </div>
 
-<Modal @ref="modalRef" >
+<Modal @ref="_modalRef" >
+    @if (string.IsNullOrEmpty(_errorMessage))
+    {
+        <ModalContent Centered>
+            <ModalBody>
+                <div class="mb-3">
+                    <label for="supplier">Поставщик:</label>
+                    <select id="supplier" @bind="_newSupply.Supplier.Id">
+                        @foreach (var supplier in _suppliers)
+                        {
+                            <option value="@supplier.Id">@supplier.Id @supplier.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="enterprise">Предприятие:</label>
+                    <select id="enterprise" @bind="_newSupply.Enterprise.MainStateRegistrationNumber">
+                        @foreach (var enterprise in _enterprises)
+                        {
+                            <option>@enterprise.MainStateRegistrationNumber</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="quanity">Количество единиц сырья:</label>
+                    <input type="number" id="quanity" @bind="_newSupply.Quanity" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="date">Дата поставки:</label>
+                    <input type="date" id="date" @bind="_newSupply.Date" class="form-control" />
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Blazorise.Color.Primary" Clicked="@(_forAdd ? AddNewSupply : UpdateSupply)">
+                    @(_forAdd ? "Добавить" : "Изменить")
+                </Button>
+                <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                    Отмена
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+    }
+    else
+    {
     <ModalContent Centered>
-        <ModalBody>
-            <div class="mb-3">
-                <label for="supplier">Поставщик:</label>
-                <select id="supplier" @bind="newSupply.Supplier.Id">
-                    @foreach (var supplier in _suppliers)
-                    {
-                        <option>@supplier.Id</option>
-                    }
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="enterprise">Предприятие:</label>
-                <select id="enterprise" @bind="newSupply.Enterprise.MainStateRegistrationNumber">
-                    @foreach (var enterprise in _enterprises)
-                    {
-                        <option>@enterprise.MainStateRegistrationNumber</option>
-                    }
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="phone">Количество единиц сырья:</label>
-                <input type="text" id="phone" @bind="newSupply.Quanity" class="form-control" />
-            </div>
-            <div class="mb-3">
-                <label for="employeeCount">Дата поставки:</label>
-                <input type="date" id="employeeCount" @bind="newSupply.Date" class="form-control" />
-            </div>
+        <ModalBody style="white-space: pre-wrap;">
+            @_errorMessage
         </ModalBody>
         <ModalFooter>
-            <Button Color="Blazorise.Color.Primary" Clicked="@(forAdd ? AddNewSupply : UpdateSupply)">
-                @(forAdd ? "Добавить" : "Изменить")
-            </Button>
             <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
-                Отмена
+                ОК
             </Button>
         </ModalFooter>
     </ModalContent>
+    }
 </Modal>
 
 
@@ -105,8 +121,8 @@
     private List<Supplier> _suppliers = new();
     private List<Enterprise> _enterprises = new();
 
-    private Modal? modalRef = null!;
-    private Supply newSupply = new() 
+    private Modal? _modalRef = null!;
+    private Supply _newSupply = new() 
     {       Id = 0,
             Supplier = new()
         {
@@ -129,8 +145,9 @@
             Quanity = 0,
             Date = DateTime.ParseExact("01.01.2000", "dd.MM.yyyy", CultureInfo.InvariantCulture)
         };
-    private bool forAdd = true;
-    private string supplyUrl = "api/Supply";
+    private bool _forAdd = true;
+    private string _supplyUrl = "api/Supply";
+    private string _errorMessage = "";
 
     private async Task LoadSuppliers()
     {
@@ -138,7 +155,7 @@
         if (response != null)
         {
             _suppliers = response;
-            newSupply.Supplier.Id = _suppliers.Select(s => s.Id).First();
+            _newSupply.Supplier.Id = _suppliers.Select(s => s.Id).First();
         }
     }
 
@@ -148,7 +165,7 @@
         if (response != null)
         {
             _enterprises = response;
-            newSupply.Enterprise.MainStateRegistrationNumber = _enterprises.Select(e => e.MainStateRegistrationNumber).First();
+            _newSupply.Enterprise.MainStateRegistrationNumber = _enterprises.Select(e => e.MainStateRegistrationNumber).First();
         }
 
     }
@@ -166,7 +183,7 @@
 
     private async Task UpdateMainList()
     {
-        var response = await Http.GetFromJsonAsync<List<Supply>>(supplyUrl);
+        var response = await Http.GetFromJsonAsync<List<Supply>>(_supplyUrl);
         if (response != null)
         {
             _supplies = response;
@@ -175,62 +192,143 @@
 
     private async Task AddNewSupply()
     {
+        
         var newItem = new SupplyDto
             {
-                IdSupplier = newSupply.Supplier.Id,
-                MainStateRegistrationNumber = newSupply.Enterprise.MainStateRegistrationNumber,
-                Quanity = newSupply.Quanity,
-                Date = newSupply.Date
+                IdSupplier = _newSupply.Supplier.Id,
+                MainStateRegistrationNumber = _newSupply.Enterprise.MainStateRegistrationNumber,
+                Quanity = _newSupply.Quanity,
+                Date = _newSupply.Date
             };
-        await Http.PostAsJsonAsync<SupplyDto>(supplyUrl, newItem);
-        await UpdateMainList();
-        await modalRef!.Hide();
+        var response = await Http.PostAsJsonAsync<SupplyDto>(_supplyUrl, newItem);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            _errorMessage += "Поставка не добавлена. Список ошибок:\n";
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                try
+                {
+                    var jsonDocument = JsonDocument.Parse(content);
+                    if (jsonDocument.RootElement.TryGetProperty("errors", out JsonElement errorsElement))
+                    {
+                        foreach (var error in errorsElement.EnumerateObject())
+                        {
+                            foreach (var errorMessage in error.Value.EnumerateArray())
+                            {
+                                _errorMessage += $"{errorMessage}\n";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _errorMessage += $"Ошибки не найдены в теле ответа. Текст ответа: {content}";
+                    }
+                }
+                catch (JsonException)
+                {
+                    _errorMessage += $"Ошибка в формате ответа сервера. Текст ответа: {content}";
+                }
+            }
+            else
+            {
+                _errorMessage += $"Неожиданная ошибка: {response.StatusCode}";
+            }
+
+        }
+        if (string.IsNullOrEmpty(_errorMessage))
+        {
+            await UpdateMainList();
+            await _modalRef!.Hide();
+        }
+       
     }
 
     private async Task DeleteSupply(int id)
     {
-        await Http.DeleteAsync($"{supplyUrl}/{id}");
+        await Http.DeleteAsync($"{_supplyUrl}/{id}");
         await UpdateMainList();
     }
 
     private async Task UpdateSupply()
     {
+
         var newItem = new SupplyDto
             {
-                IdSupplier = newSupply.Supplier.Id,
-                MainStateRegistrationNumber = newSupply.Enterprise.MainStateRegistrationNumber,
-                Quanity = newSupply.Quanity,
-                Date = newSupply.Date
+                IdSupplier = _newSupply.Supplier.Id,
+                MainStateRegistrationNumber = _newSupply.Enterprise.MainStateRegistrationNumber,
+                Quanity = _newSupply.Quanity,
+                Date = _newSupply.Date
             };
-        await Http.PutAsJsonAsync($"{supplyUrl}/{newSupply.Id}", newItem);
+        var response = await Http.PutAsJsonAsync($"{_supplyUrl}/{_newSupply.Id}", newItem);
 
-        newSupply = new()
+        if (!response.IsSuccessStatusCode)
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            _errorMessage += "Поставка не обновлена. Список ошибок:\n";
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
-                Id = 0,
-                Supplier = _suppliers.First(),
-                Enterprise = _enterprises.First(),
-                Quanity = 0,
-                Date = DateTime.ParseExact("01.01.2000", "dd.MM.yyyy", CultureInfo.InvariantCulture)
-            };
+                try
+                {
+                    var jsonDocument = JsonDocument.Parse(content);
+                    if (jsonDocument.RootElement.TryGetProperty("errors", out JsonElement errorsElement))
+                    {
+                        foreach (var error in errorsElement.EnumerateObject())
+                        {
+                            foreach (var errorMessage in error.Value.EnumerateArray())
+                            {
+                                _errorMessage += $"{errorMessage}\n";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _errorMessage += $"Ошибки не найдены в теле ответа. Текст ответа: {content}";
+                    }
+                }
+                catch (JsonException)
+                {
+                    _errorMessage += $"Ошибка в формате ответа сервера. Текст ответа: {content}";
+                }
+            }
+            else
+            {
+                _errorMessage += $"Неожиданная ошибка: {response.StatusCode}";
+            }
 
-        await UpdateMainList();
-        await modalRef!.Hide();
+        }
+        if (string.IsNullOrEmpty(_errorMessage))
+        {
+            _newSupply = new()
+                {
+                    Id = 0,
+                    Supplier = _suppliers.First(),
+                    Enterprise = _enterprises.First(),
+                    Quanity = 0,
+                    Date = DateTime.Now
+                };
+            await UpdateMainList();
+            await _modalRef!.Hide();
+        }
     }
 
     private async Task ShowUpdModal(int id)
     {
-        forAdd = false;
-        var response = await Http.GetFromJsonAsync<Supply>($"{supplyUrl}/{id}");
+        _forAdd = false;
+        var response = await Http.GetFromJsonAsync<Supply>($"{_supplyUrl}/{id}");
         if (response != null)
         {
-            newSupply = response;
+            _newSupply = response;
         }
-        await modalRef!.Show();
+        await _modalRef!.Show();
     }
 
     private async Task ShowAddModal() {
-        forAdd = true;
-        newSupply = new()
+        _forAdd = true;
+        _newSupply = new()
             {
                 Id = 0,
                 Supplier = new()
@@ -252,14 +350,15 @@
                     OwnershipForm = OwnershipForms.LimitedLiabilityPartnership
                 },
                 Quanity = 0,
-                Date = DateTime.ParseExact("01.01.1990", "dd.MM.yyyy", CultureInfo.InvariantCulture)
+                Date = DateTime.Now
             };
-        await modalRef!.Show();
+        await _modalRef!.Show();
     }
 
     private async Task CancelHandler()
     {
-        await modalRef!.Hide();
+        await _modalRef!.Hide();
+        _errorMessage = "";
     }
 
 } 

@@ -1,6 +1,6 @@
 ﻿@page "/suppliers"
-@using System.Globalization;
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <PageTitle>Suppliers</PageTitle>
 
@@ -56,49 +56,65 @@
 
 </div>
 
-<Modal @ref="modalRef" >
-    <ModalContent Centered>
-        <ModalBody>
-            <div class="mb-3">
-                <label for="name">ФИО:</label>
-                <input type="text" id="name" @bind="newSupplier.FullName" class="form-control" />
-            </div>
-            <div class="mb-3">
-                <label for="address">Адрес:</label>
-                <input type="text" id="address" @bind="newSupplier.Address" class="form-control" />
-            </div>
-            <div class="mb-3">
-                <label for="phone">Телефон:</label>
-                <input type="text" id="phone" @bind="newSupplier.Phone" class="form-control" />
-            </div>
-        </ModalBody>
-        <ModalFooter>
-            <Button Color="Blazorise.Color.Primary" Clicked="@(forAdd ? AddNewSupplier : UpdateSupplier)">
-                @(forAdd ? "Добавить" : "Изменить")
-            </Button>
-            <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
-                Отмена
-            </Button>
-        </ModalFooter>
-    </ModalContent>
+<Modal @ref="_modalRef">
+    @if (string.IsNullOrEmpty(_errorMessage))
+    {
+        <ModalContent Centered>
+            <ModalBody>
+                <div class="mb-3">
+                    <label for="name">ФИО:</label>
+                    <input type="text" id="name" @bind="_newSupplier.FullName" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="address">Адрес:</label>
+                    <input type="text" id="address" @bind="_newSupplier.Address" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="phone">Телефон:</label>
+                    <input type="text" id="phone" @bind="_newSupplier.Phone" class="form-control" />
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Blazorise.Color.Primary" Clicked="@(_forAdd ? AddNewSupplier : UpdateSupplier)">
+                    @(_forAdd ? "Добавить" : "Изменить")
+                </Button>
+                <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                    Отмена
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+    }
+    else
+    {
+        <ModalContent Centered>
+            <ModalBody style="white-space: pre-wrap;">
+                @_errorMessage
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                    ОК
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+    }
 </Modal>
-
 
 @code {
     private List<Supplier> _suppliers = new();
-    private Modal? modalRef = null!;
-    private Supplier newSupplier = new() 
+    private Modal? _modalRef = null!;
+    private Supplier _newSupplier = new() 
     {       Id = 0,
             FullName = "",
             Address = "",
             Phone = ""
     };
-    private bool forAdd = true;
-    private string supplierUrl = "api/Supplier";
+    private bool _forAdd = true;
+    private string _supplierUrl = "api/Supplier";
+    private string _errorMessage = "";
 
     private async Task UpdateMainList()
     {
-        var response = await Http.GetFromJsonAsync<List<Supplier>>(supplierUrl);
+        var response = await Http.GetFromJsonAsync<List<Supplier>>(_supplierUrl);
         if (response != null)
         {
             _suppliers = response;
@@ -112,68 +128,139 @@
 
     private async Task AddNewSupplier()
     {
-        await Http.PostAsJsonAsync<Supplier>(supplierUrl, newSupplier);
-        await UpdateMainList();
-        await modalRef!.Hide();
+        var response = await Http.PostAsJsonAsync<Supplier>(_supplierUrl, _newSupplier);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            _errorMessage += "Поставщик не добавлен. Список ошибок:\n";
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                try
+                {
+                    var jsonDocument = JsonDocument.Parse(content);
+                    if (jsonDocument.RootElement.TryGetProperty("errors", out JsonElement errorsElement))
+                    {
+                        foreach (var error in errorsElement.EnumerateObject())
+                        {
+                            foreach (var errorMessage in error.Value.EnumerateArray())
+                            {
+                                _errorMessage += $"{errorMessage}\n";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _errorMessage += $"Ошибки не найдены в теле ответа. Текст ответа: {content}";
+                    }
+                }
+                catch (JsonException)
+                {
+                    _errorMessage += $"Ошибка в формате ответа сервера. Текст ответа: {content}";
+                }
+            }
+            else
+            {
+                _errorMessage += $"Неожиданная ошибка: {response.StatusCode}";
+            }
+
+        }
+        if(string.IsNullOrEmpty(_errorMessage))
+        {
+            await UpdateMainList();
+            await _modalRef!.Hide();
+        }
     }
 
     private async Task DeleteSupplier(int id)
     {
-        await Http.DeleteAsync($"{supplierUrl}/{id}");
-        await UpdateMainList();
-
-        // var directions = await Http.GetFromJsonAsync<List<Domain.Models.Direction>>("api/Direction");
-        // if (directions != null)
-        // {
-        //     directions = directions.Where(d => d.ApplicantId == applicantId).ToList();
-        //     foreach (var d in directions)
-        //     {
-        //         await Http.DeleteAsync($"api/Direction/{d.Id}");
-        //     }
-        // }
+        await Http.DeleteAsync($"{_supplierUrl}/{id}");
+        await UpdateMainList(); 
     }
 
     private async Task UpdateSupplier()
     {
-        await Http.PutAsJsonAsync($"{supplierUrl}/{newSupplier.Id}", newSupplier);
+        var response = await Http.PutAsJsonAsync($"{_supplierUrl}/{_newSupplier.Id}", _newSupplier); ;
 
-        newSupplier = new()
+        if (!response.IsSuccessStatusCode)
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            _errorMessage += "Поставщик не обновлен. Список ошибок:\n";
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
-                Id = 0,
-                FullName = "",
-                Address = "",
-                Phone = ""
-            };
-        await UpdateMainList();
-        await modalRef!.Hide();
+                try
+                {
+                    var jsonDocument = JsonDocument.Parse(content);
+                    if (jsonDocument.RootElement.TryGetProperty("errors", out JsonElement errorsElement))
+                    {
+                        foreach (var error in errorsElement.EnumerateObject())
+                        {
+                            foreach (var errorMessage in error.Value.EnumerateArray())
+                            {
+                                _errorMessage += $"{errorMessage}\n";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _errorMessage += $"Ошибки не найдены в теле ответа. Текст ответа: {content}";
+                    }
+                }
+                catch (JsonException)
+                {
+                    _errorMessage += $"Ошибка в формате ответа сервера. Текст ответа: {content}";
+                }
+            }
+            else
+            {
+                _errorMessage += $"Неожиданная ошибка: {response.StatusCode}";
+            }
+
+        }
+        if (string.IsNullOrEmpty(_errorMessage))
+        {
+            _newSupplier = new()
+                {
+                    Id = 0,
+                    FullName = "",
+                    Address = "",
+                    Phone = ""
+                };
+            await UpdateMainList();
+            await _modalRef!.Hide();
+        }
+
     }
 
     private async Task ShowUpdModal(int id)
     {
-        forAdd = false;
-        var response = await Http.GetFromJsonAsync<Supplier>($"{supplierUrl}/{id}");
+        _forAdd = false;
+        var response = await Http.GetFromJsonAsync<Supplier>($"{_supplierUrl}/{id}");
         if (response != null)
         {
-            newSupplier = response;
+            _newSupplier = response;
         }
-        await modalRef!.Show();
+        await _modalRef!.Show();
     }
 
     private async Task ShowAddModal() {
-        forAdd = true;
-        newSupplier = new()
+        _forAdd = true;
+        _newSupplier = new()
             {
                 Id = 0,
                 FullName = "",
                 Address = "",
                 Phone = ""
             };
-        await modalRef!.Show();
+        await _modalRef!.Show();
     }
 
     private async Task CancelHandler()
     {
-        await modalRef!.Hide();
+        await _modalRef!.Hide();
+        _errorMessage = "";
     }
 
 } 

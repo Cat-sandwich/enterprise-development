@@ -1,6 +1,6 @@
 ﻿@page "/queries"
-@using System.Globalization;
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <PageTitle>Query</PageTitle>
 
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    @if (query1 != null)
+    @if (_query1 != null)
     {
         <div class="result-container">
             <table class="table">
@@ -43,7 +43,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var enterprise in query1)
+                    @foreach (var enterprise in _query1)
                     {
                         <tr>
                             <td>@enterprise.MainStateRegistrationNumber</td>
@@ -78,7 +78,7 @@
         </div>
     </div>
     
-    @if (query2 != null)
+    @if (_query2 != null)
     {
         <div class="result-container">
             <table class="table">
@@ -91,7 +91,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var supplier in query2)
+                    @foreach (var supplier in _query2)
                     {
                         <tr>
                             <td>@supplier.Id</td>
@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    @if (query3 != null)
+    @if (_query3 != null)
     {
         <div class="result-container">
             <table class="table">
@@ -130,7 +130,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var supplier in query3)
+                    @foreach (var supplier in _query3)
                     {
                         <tr>
                             <td>@supplier.SupplierId</td>
@@ -158,7 +158,7 @@
         </div>
     </div>
 
-    @if (query4 != null)
+    @if (_query4 != null)
     {
         <div class="result-container">
             <table class="table">
@@ -170,7 +170,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var supplierCount in query4)
+                    @foreach (var supplierCount in _query4)
                     {
                         <tr>
                             <td>@supplierCount.IndustryType</td>
@@ -195,7 +195,7 @@
             </Button>
         </div>
     </div>
-    @if (query5 != null)
+    @if (_query5 != null)
     {
         <div class="result-container">
             <table class="table">
@@ -213,7 +213,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var supplyCount in query5)
+                    @foreach (var supplyCount in _query5)
                     {
                         <tr>
                             <td>@supplyCount.Enterprise.MainStateRegistrationNumber</td>
@@ -251,7 +251,7 @@
     </div>
     </div>
 
-    @if (query6 != null)
+    @if (_query6 != null)
     {
         <div class="result-container">
             
@@ -268,7 +268,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var supplyCount in query6)
+                        @foreach (var supplyCount in _query6)
                         {
                             <tr>
                                 <td>@supplyCount.Supplier.Id</td>
@@ -285,23 +285,38 @@
         </div>
     }
 </div>
+<Modal @ref="_modalRef" >
+    <ModalContent Centered>
+        <ModalBody style="white-space: pre-wrap;">
+            @_errorMessage
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Blazorise.Color.Secondary" Clicked="@CancelHandler">
+                ОК
+            </Button>
+        </ModalFooter>
+    </ModalContent>
 
+</Modal>
 
 @code {
     private List<Enterprise> _enterprise = new();
     private List<Supplier> _suppliers = new();
     private List<Supply> _supplies = new();
 
+    private Modal? _modalRef = null!;
+
     private ulong _selectOGRN = 0;
     private DateTime _startDate = DateTime.ParseExact("01.01.2024", "dd.MM.yyyy", CultureInfo.InvariantCulture);
     private DateTime _endDate = DateTime.ParseExact("01.01.2024", "dd.MM.yyyy", CultureInfo.InvariantCulture);
 
-    private List<Enterprise> query1 = null!;
-    private List<Supplier> query2 = null!;
-    private List<EnterpriseCountsDto> query3 = null!;
-    private List<SupplierCountIndustryOwnershipDto> query4 = null!;
-    private List<EnterprisesSupplyCountDto> query5 = null!;
-    private List<SuppliersWithMaxSupplyDto> query6 = null!;
+    private List<Enterprise> _query1 = null!;
+    private List<Supplier> _query2 = null!;
+    private List<EnterpriseCountsDto> _query3 = null!;
+    private List<SupplierCountIndustryOwnershipDto> _query4 = null!;
+    private List<EnterprisesSupplyCountDto> _query5 = null!;
+    private List<SuppliersWithMaxSupplyDto> _query6 = null!;
+    private string _errorMessage = "";
 
     private async Task GetEnterprises()
     {
@@ -346,47 +361,69 @@
                 var response1 = await Http.GetFromJsonAsync<List<Enterprise>>("api/Query/info_specific_enterprise?mainStateRegistrationNumber=" + _selectOGRN);
                 if (response1 != null)
                 {
-                    query1 = response1;
+                    _query1 = response1;
                 }
                 break;
             case 2:
-                string formattedStartDate1 = _startDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
-                string formattedEndDate1 = _endDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
-
-                var response2 = await Http.GetFromJsonAsync<List<Supplier>>("api/Query/info_supplier_by_date?startDate= " + formattedStartDate1 + "&endDate=" + formattedEndDate1);
-                if (response2 != null)
+                if (DateTime.Compare(_startDate, _endDate) >= 0 )
                 {
-                    query2 = response2;
+                    _errorMessage = "Дата начала должна быть меньше даты конца.";
+                    await _modalRef!.Show();
+
                 }
+                else
+                {
+                    _errorMessage = "";
+                    string formattedStartDate1 = _startDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
+                    string formattedEndDate1 = _endDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
+
+                    var response2 = await Http.GetFromJsonAsync<List<Supplier>>("api/Query/info_supplier_by_date?startDate= " + formattedStartDate1 + "&endDate=" + formattedEndDate1);
+                    if (response2 != null)
+                    {
+                        _query2 = response2;
+                    }
+                }
+
                 break;
             case 3:
                 var response3 = await Http.GetFromJsonAsync<List<EnterpriseCountsDto>>("api/Query/count_enterprise");
                 if (response3 != null)
                 {
-                    query3 = response3;
+                    _query3 = response3;
                 }
                 break;
             case 4:
                 var response4 = await Http.GetFromJsonAsync<List<SupplierCountIndustryOwnershipDto>>("api/Query/supplier_by_industy_and_ownership");
                 if (response4 != null)
                 {
-                    query4 = response4;
+                    _query4 = response4;
                 }
                 break;
             case 5:
                 var response5 = await Http.GetFromJsonAsync<List<EnterprisesSupplyCountDto>>("api/Query/top_5_enterprise");
                 if (response5 != null)
                 {
-                    query5 = response5;
+                    _query5 = response5;
                 }
                 break;
             case 6:
-                string formattedStartDate2 = _startDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
-                string formattedEndDate2 = _endDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
-                var response6 = await Http.GetFromJsonAsync<List<SuppliersWithMaxSupplyDto>>("api/Query/supplier_and_max_quantity_by_period?startDate= " + formattedStartDate2 + "&endDate=" + formattedEndDate2);
-                if (response6 != null)
+                if (DateTime.Compare(_startDate, _endDate) >= 0)
                 {
-                    query6 = response6;
+                    _errorMessage = "Дата начала должна быть меньше даты конца.";
+                    await _modalRef!.Show();
+
+                }
+                else
+                {
+                    _errorMessage = ""; 
+                    string formattedStartDate2 = _startDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
+                    string formattedEndDate2 = _endDate.ToString("MM.dd.yyyy", CultureInfo.InvariantCulture);
+
+                    var response6 = await Http.GetFromJsonAsync<List<SuppliersWithMaxSupplyDto>>("api/Query/supplier_and_max_quantity_by_period?startDate= " + formattedStartDate2 + "&endDate=" + formattedEndDate2);
+                    if (response6 != null)
+                    {
+                        _query6 = response6;
+                    }
                 }
                 break;
         }
@@ -396,23 +433,28 @@
          switch (taskId)
             {
                 case 1:
-                    query1 = null!;
+                    _query1 = null!;
                     break;
                 case 2:
-                    query2 = null!;
+                    _query2 = null!;
                     break;
                 case 3:
-                    query3 = null!;
+                    _query3 = null!;
                     break;
                 case 4:
-                    query4 = null!;
+                    _query4 = null!;
                     break;
                 case 5:
-                    query5 = null!;
+                    _query5 = null!;
                     break;
                 case 6:
-                    query6 = null!;
+                    _query6 = null!;
                     break;
             }
+    }
+    private async Task CancelHandler()
+    {
+        await _modalRef!.Hide();
+        _errorMessage = "";
     }
 }

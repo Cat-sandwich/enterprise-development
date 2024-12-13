@@ -1,4 +1,6 @@
-﻿namespace EnterpriseStatistics.Application.DTO;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace EnterpriseStatistics.Application.DTO;
 
 /// <summary>
 /// Поставка
@@ -16,6 +18,7 @@ public class SupplyDto
     /// <summary>
     /// Количество единиц сырья
     /// </summary>
+    [Range(1, 1000, ErrorMessage = "Количество единиц сырья должено быть в диапазоне {1}-{2}")]
     public required int Quanity { get; set; }
     /// <summary>
     /// Дата поставки
